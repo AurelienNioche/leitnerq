@@ -55,12 +55,12 @@ class ExtLQNScheduler(object):
                 if difficulty >= x:
                     return self.num_systems - i
         self.system_of_item = {item: place_item(difficulty) \
-                for item, difficulty in self.difficulty_of_item.iteritems()}
+                for item, difficulty in self.difficulty_of_item.items()}
 
-        self.deck_of_item = {item: (system, 0) for item, system in self.system_of_item.iteritems()}
+        self.deck_of_item = {item: (system, 0) for item, system in self.system_of_item.items()}
         self.latest_timestamp_of_item = copy.copy(self.arrival_time_of_item)
         self.items_of_deck = {(i, j): set() \
-                for i in xrange(1, self.num_systems + 1) for j in xrange(1, self.num_decks + 1)}
+                for i in range(1, self.num_systems + 1) for j in range(1, self.num_decks + 1)}
 
     def next_item(self, current_time=None):
         """
@@ -80,7 +80,7 @@ class ExtLQNScheduler(object):
             current_time = int(time.time())
 
         # handle arrivals
-        kvs = self.arrival_time_of_item.items()
+        kvs = self.arrival_time_of_item.copy().items()
         for item, arrival_time in kvs:
             if arrival_time > current_time:
                 break
@@ -90,19 +90,19 @@ class ExtLQNScheduler(object):
             del self.arrival_time_of_item[item]
 
         if all(deck == 0 or deck > self.num_decks \
-                for (system, deck) in self.deck_of_item.itervalues()):
+                for (system, deck) in self.deck_of_item.values()):
             raise ExhaustedError # all items that have arrived have been mastered
 
         # sample deck
         normalize = lambda x: np.array(x) / sum(x)
-        decks = [(x, y) for x in xrange(1, self.num_systems + 1) \
-                for y in xrange(1, self.num_decks + 1)]
+        decks = [(x, y) for x in range(1, self.num_systems + 1) \
+                for y in range(1, self.num_decks + 1)]
         sampled_deck_idx = np.random.choice(
             range(len(decks)),
             p=normalize([self.review_rates[x-1, y-1] \
                     if self.items_of_deck[(x, y)] != set() else 0 \
-                    for x in xrange(1, self.num_systems + 1) \
-                    for y in xrange(1, self.num_decks + 1)]))
+                    for x in range(1, self.num_systems + 1) \
+                    for y in range(1, self.num_decks + 1)]))
         sampled_deck = decks[sampled_deck_idx]
 
         if self.processor_sharing:

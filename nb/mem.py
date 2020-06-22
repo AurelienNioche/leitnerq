@@ -9,7 +9,6 @@ import sys
 
 from sklearn import preprocessing
 from sklearn.linear_model import LogisticRegression
-import numpy as np
 
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -142,7 +141,8 @@ class EFCModel(models.SkillModel):
         eps = 1e-9 # smoothing parameter for likelihoods
         if self.content_features is not None:
             if self.using_item_bias:
-                def loss((coeffs, item_biases)):
+                def loss(args):
+                    coeffs, item_biases = args
                     """
                     Compute the average negative log-likelihood and regularization penalty 
                     given the data and hyperparameter values
@@ -155,7 +155,7 @@ class EFCModel(models.SkillModel):
                     """
 
                     difficulties = np.exp(-(np.einsum(
-                        'i, ji -> j', coeffs, self.content_features[module_idxes, :]) \
+                        'i, ji -> j', coeffs, self.content_features[module_idxes, :])
                                 + item_biases[module_idxes]))
                     pass_likelihoods = np.exp(-difficulties*delays/strengths)
                     log_likelihoods = outcomes*np.log(pass_likelihoods+eps) \
@@ -215,7 +215,7 @@ class EFCModel(models.SkillModel):
             item_biases = 0
         
         losses = []
-        for _ in xrange(max_iter):
+        for _ in range(max_iter):
             # perform gradient descent update
             if self.content_features is not None:
                 if self.using_item_bias:
@@ -243,7 +243,7 @@ class EFCModel(models.SkillModel):
                 break
 
         self.difficulty = np.exp(-((np.einsum(
-            'i, ji -> j', coeffs, self.content_features) \
+            'i, ji -> j', coeffs, self.content_features)
                     if self.content_features is not None else 0) + item_biases))
 
         if self.debug_mode_on: 
@@ -332,15 +332,15 @@ class LogisticRegressionModel(models.SkillModel):
             interval_feature_list = [0] * 8
         else:
             intervals = np.log(np.array(intervals)+1)
-            interval_feature_list = [len(intervals), intervals[0], intervals[-1], \
-                    np.mean(intervals), min(intervals), max(intervals), \
+            interval_feature_list = [len(intervals), intervals[0], intervals[-1],
+                    np.mean(intervals), min(intervals), max(intervals),
                     max(intervals)-min(intervals), sorted(intervals)[len(intervals) // 2]]
 
         if len(outcomes) == 0:
             outcome_feature_list = [0] * 8
         else:
-            outcome_feature_list = [len(outcomes), outcomes[0], outcomes[-1], \
-                    np.mean(outcomes), min(outcomes), max(outcomes), \
+            outcome_feature_list = [len(outcomes), outcomes[0], outcomes[-1],
+                    np.mean(outcomes), min(outcomes), max(outcomes),
                     max(outcomes)-min(outcomes), sorted(outcomes)[len(outcomes) // 2]]
 
         return np.array(interval_feature_list + outcome_feature_list)
@@ -362,10 +362,10 @@ class LogisticRegressionModel(models.SkillModel):
             self.data[user_item_pair_id] = (intervals, outcomes, timestamps)
 
         X_train = np.array([self.extract_features(
-            (intervals[:i+1], outcomes[:i+1], timestamps[:i+1])) \
-                for intervals, outcomes, timestamps in self.data.itervalues() \
-                for i in xrange(len(intervals))])
-        Y_train = np.array([x for intervals, outcomes, timestamps in self.data.itervalues() \
+            (intervals[:i+1], outcomes[:i+1], timestamps[:i+1]))
+                for intervals, outcomes, timestamps in self.data.values()
+                for i in range(len(intervals))])
+        Y_train = np.array([x for intervals, outcomes, timestamps in self.data.values()
                 for x in outcomes[1:]])
 
         self.clf = LogisticRegression(C=C)
